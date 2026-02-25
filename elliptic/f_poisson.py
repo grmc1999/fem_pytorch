@@ -85,4 +85,5 @@ class poisson_BC_control(linear_poisson):
     def control_problem(self, g, V):
         u = fd.Function(V)
         u_sol = self.solve(u,f, g, V)
+        b1 = fx.dat.data[mesh.exterior_facets.subset(1).indices]
 
