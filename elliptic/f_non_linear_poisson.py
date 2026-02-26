@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch import optim
 from f_poisson import linear_poisson
+import ufl
 
 class non_linear_poisson(linear_poisson):
   def PDE_definition(self,u,f,V,K):
@@ -21,7 +22,7 @@ class non_linear_poisson(linear_poisson):
   def solve(self,u,f,V,K):
     v = fd.TestFunction(V)
     F = self.PDE_definition(u,f,V,K)
-    bc = self.BC_definition(V,fd.Constant(0.1))
+    bc = self.BC_definition(V,fd.Constant(0.0))
     fd.solve(F == 0,u, bcs = [bc])
     return u
 
@@ -32,9 +33,9 @@ class non_linear_poisson(linear_poisson):
     """
     u = fd.Function(V)
     u_sol = self.solve(u,f,V,K)
-    x,y = fd.SpatialCoordinate(self.mesh)
+    X = fd.SpatialCoordinate(self.mesh)
     u_j = fd.Function(V)
-    u_j.interpolate(0.5*fd.exp((-1*(x-0.25)**2)/0.01) + 0.5*fd.exp((-1*(x-0.75)**2)/0.01))
+    u_j.interpolate( 0.5*fd.exp((-1*( (X[0]-0.75)**2 + (X[1]-0.75)**2 ))/0.001))
     return fd.assemble(((u_j-u_sol)**2)*fd.dx)
 
   def control_f(self, u, V,K):
@@ -51,4 +52,4 @@ class non_linear_poisson(linear_poisson):
     G = fd.ml.pytorch.torch_operator(Jhat)
     fd.adjoint.stop_annotating()
     composed_function_loss = G(f_p)
-    return composed_function_loss
+    return composed_function_loss,f_p
