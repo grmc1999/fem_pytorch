@@ -1,12 +1,14 @@
 import firedrake as fd
 import numpy as np
 import torch
+from torch import optim
 
 
 class linear_poisson(object):
     def __init__(self,mesh,model):
         self.mesh = mesh
         self.model = model
+        self.optimiser = optim.AdamW(self.model.parameters(), lr = 1e-3, eps=1e-8)
 
     def PDE_definition(self,u,f,V):
         v = fd.TestFunction(V)
@@ -36,6 +38,8 @@ class linear_poisson(object):
         x,y = fd.SpatialCoordinate(self.mesh)
         u_j = fd.Function(V)
         u_j.interpolate(0.5*fd.exp((-1*(x-0.25)**2)/0.01) + 0.5*fd.exp((-1*(x-0.75)**2)/0.01))
+        return fd.assemble(((u_j-u_sol)**2)*fd.dx)
+        
 
     def control_f(self, u, V):
         """
@@ -58,9 +62,9 @@ class linear_poisson(object):
         c = fd.adjoint.Control(f)
 
         Jhat = fd.adjoint.ReducedFunctional(self.control_problem(f,V),c)
-        G = fd.ml.pytorch.torch.operator(Jhat)
+        G = fd.ml.pytorch.torch_operator(Jhat)
 
-        fd.adjoint.stop_annotation()
+        fd.adjoint.stop_annotating()
 
         composed_function_loss = G(f_p)
 
@@ -71,7 +75,7 @@ class linear_poisson(object):
 
 
 class poisson_BC_control(linear_poisson):
-    def __init__(V,g,**args):
+    def __init__(self,V,g,**args):
         super().__init__(**args)
         _ = self.BC_definition(V,g)
 
@@ -129,3 +133,5 @@ class poisson_BC_control(linear_poisson):
         fd.adjoint.stop_annotating()
         composed_functional_loss = self.G(g_p)
         return composed_functional_loss,g_p
+
+
