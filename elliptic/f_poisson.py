@@ -71,7 +71,7 @@ class linear_poisson(object):
 
 
 class poisson_BC_control(linear_poisson):
-    def __init__(**args,V,g):
+    def __init__(V,g,**args):
         super().__init__(**args)
         _ = self.BC_definition(V,g)
 
