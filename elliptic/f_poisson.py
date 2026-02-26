@@ -66,7 +66,7 @@ class linear_poisson(object):
 
         return composed_function_loss
 
-    def optimization_iteration(self):
+#    def optimization_iteration(self):
 
 
 
