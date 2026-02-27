@@ -2,14 +2,15 @@ import firedrake as fd
 import numpy as np
 import torch
 from torch import optim
+import copy
 
 
 class linear_diffusion(object):
-    def __init__(self,mesh):
+    def __init__(self,mesh,phi=0.2,c_t=1.0,dt=1.0):
         self.mesh = mesh
-        self.phi = fd.Constant(0.2)
-        self.c_t = fd.Constant(1.0)
-        self.dt = fd.Constant(1.0)
+        self.phi = fd.Constant(phi)
+        self.c_t = fd.Constant(c_t)
+        self.dt = fd.Constant(dt)
 
         self.theta = fd.Constant(1.0)
 
@@ -34,7 +35,10 @@ class linear_diffusion(object):
         p_theta = self.theta*p + (1 - self.theta)*p_n
         q_theta = self.theta*q + (1 - self.theta)*q_n
 
-        F = ((self.phi*self.c_t)/self.dt)*(p - p_n)* fd.dx + fd.inner( fd.grad(p_theta), fd.grad(v)) * fd.dx - (q_theta)*fd.dx
+#        F = (((self.phi*self.c_t)/self.dt)*(p - p_n)*v)*fd.dx + fd.inner( fd.grad(p_theta), fd.grad(v)) * fd.dx - (q_theta)*fd.dx
+        F = (((self.phi*self.c_t)/self.dt)*(p - p_n)*v)*fd.dx \
+            + fd.inner( fd.grad(p_theta), fd.grad(v)) * fd.dx \
+            - (q_theta*v)*fd.dx
         return F
     
     def IC_definition(self,V,p_0):
@@ -46,16 +50,17 @@ class linear_diffusion(object):
         return bc
 
     def solve(self,p,q_h,V,num_step):
-        bc = self.BC_definition(V, fd.Constant(1.0))
-        p_n = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(0.0)))
-        p_h = [p_n]
+        bc = self.BC_definition(V, fd.Constant(0.0))
+        p_n = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(5.0)))
+        p_h = [copy.deepcopy(p_n)]
 
         for nstep in range(1,num_step+1):
+            print(f"step {nstep}")
             F = self.PDE_definition( p, p_n, q_h[nstep+1], q_h[nstep], V)
             fd.solve(F == 0, p, bcs = [bc])
-            p_h.append(p)
-            p_n.assing(p)
-        return p_n
+            p_h.append(copy.deepcopy(p))
+            p_n.interpolate(p)
+        return p_h
     
 
 class control_linear_diffusion(linear_diffusion):
