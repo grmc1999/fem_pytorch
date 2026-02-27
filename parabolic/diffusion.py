@@ -47,7 +47,7 @@ class linear_diffusion(object):
 
     def solve(self,p,q_h,V,num_step):
         bc = self.BC_definition(V, fd.Constant(1.0))
-        p_n = self.IC_definition(V,fd.Function(V).interpolate(fd.Consttant(0.0)))
+        p_n = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(0.0)))
         p_h = [p_n]
 
         for nstep in range(1,num_step+1):
