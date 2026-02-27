@@ -1,13 +1,15 @@
 import firedrake as fd
 import numpy as np
 import torch
-from torch import optim
+from torch import optim, nn
 import copy
+from typing import List
+from functools import reduce
 
 
 class linear_diffusion(object):
-    def __init__(self,mesh,phi=0.2,c_t=1.0,dt=1.0):
-        self.mesh = mesh
+    def __init__(self, mesh: fd.mesh.MeshGeometry, phi: float = 0.2, c_t: float = 1.0, dt: float = 1.0):
+        self.mesh = mesh 
         self.phi = fd.Constant(phi)
         self.c_t = fd.Constant(c_t)
         self.dt = fd.Constant(dt)
@@ -18,10 +20,15 @@ class linear_diffusion(object):
         self.bc.nodes
         return self.bc.nodes.shape[0]
 
-    def get_coordinate_functions(self,V):
+    def get_coordinate_functions(self ,V: fd.functionspaceimpl.WithGeometry):
         return tuple(fd.Function(V).interpolate(dof) for dof in fd.SpatialCoordinate(self.mesh))
 
-    def PDE_definition(self,p,p_n,q,q_n,V):
+    def PDE_definition(self,
+                    p: fd.function.Function,
+                    p_n: fd.function.Function,
+                    q: fd.function.Function,
+                    q_n: fd.function.Function,
+                    V: fd.functionspaceimpl.WithGeometry):
         """
         Docstring for PDE_definition
         :param p: at p_{n+1}
@@ -49,7 +56,12 @@ class linear_diffusion(object):
         bc = fd.DirichletBC(V, g, "on_boundary")
         return bc
 
-    def solve(self,p,q_h,V,num_step):
+    def solve(self,
+                p: fd.function.Function,
+                q_h: List[fd.function.Function],
+                V: fd.functionspaceimpl.WithGeometry,
+                num_step: int
+                ):
         bc = self.BC_definition(V, fd.Constant(0.0))
         p_n = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(5.0)))
         p_h = [copy.deepcopy(p_n)]
@@ -64,34 +76,50 @@ class linear_diffusion(object):
     
 
 class control_linear_diffusion(linear_diffusion):
-    def __init__(self,model,**args):
+    def __init__(self,model: nn.module, num_step: int,**args):
         super().__init__(**args)
         self.model = model
         self.optimiser = optim.AdamW(self.model.parameters(), lr = 1e-3, eps=1e-8)
+        self.num_step = num_step
 
-    def control_problem(self,u,f,V):
+    def control_problem(self, q_h: List[fd.function.Function], p_h_tilde: List[fd.function.Function], V, num_step: int):
 
-        u = fd.Function(V)
-        u_sol = self.solve(u,f,V)
+        p = fd.Function(V)
+        p_sol = self.solve(
+            p = p,
+            q_h= q_h,
+            V = V,
+            num_step = num_step
+        )
+        assert len(p_sol) == len(p_h_tilde)
 
-        X = fd.SpatialCoordinate(self.mesh)
-        u_j = fd.Function(V)
-        u_j.interpolate(0.5*fd.exp((-1*(X[0]-0.25)**2)/0.01) + 0.5*fd.exp((-1*(X[0]-0.75)**2)/0.01))
-        return fd.assemble(((u_j-u_sol)**2)*fd.dx)
+        cost = reduce(lambda a,b: a+b, list( (p_ - p_tilde)*fd.dx for p_,p_tilde in zip(p_sol,p_h_tilde)))
+        return cost
     
-    def control_f(self, u, V,K):
+    def control_f(self, p_h_tilde: List[fd.function.Function], V):
         """
         control problem example:
         ml model estimates source (f) as a mapping from coordinates to f
         """
-        dof_f = tuple(fd.ml.pytorch.to_torch(fd.Function(V).interpolate(dof)) for dof in fd.SpatialCoordinate(self.mesh))
+        dof_f = self.get_coordinate_functions(V)
+
         f_p = self.model(*dof_f)
+
         fd.adjoint.continue_annotation()
-        f = fd.Function(V)
-        c = fd.adjoint.Control(f)
-        Jhat = fd.adjoint.ReducedFunctional(self.control_problem(f, V, K),c)
+        q_h = list(fd.Function(V) for _ in range(len()))
+        c = map(fd.adjoint.Control, q_h)
+        Jhat = fd.adjoint.ReducedFunctional(
+            self.control_problem(
+                q_h = q_h,
+                p_h_tilde = p_h_tilde,
+                V = V,
+                num_step = self.num_step
+            ),
+            c)
         G = fd.ml.pytorch.torch_operator(Jhat)
         fd.adjoint.stop_annotating()
+
         composed_function_loss = G(f_p)
+
         return composed_function_loss,f_p
 

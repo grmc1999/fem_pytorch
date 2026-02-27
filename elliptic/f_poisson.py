@@ -4,77 +4,70 @@ import torch
 from torch import optim
 
 
-class linear_poisson(object):
-    def __init__(self,mesh,model):
-        self.mesh = mesh
-        self.model = model
-        self.optimiser = optim.AdamW(self.model.parameters(), lr = 1e-3, eps=1e-8)
+class Poisson(object):
+  def __init__(self, mesh):
+    self.mesh = mesh
 
-    def PDE_definition(self,u,f,V):
-        v = fd.TestFunction(V)
-        F = (fd.inner(fd.grad(u),fd.grad(v)) + fd.inner(u,v) - fd.inner(f,v)) * fd.dx
-        return F
-    
-    def BC_definition(self,V,g):
-        bc = fd.DirichletBC(V, g, "on_boundary")
-        return bc
+  def PDE_definition(self,u,f,V):
 
-    def solve(self,u,f,V):
+    v = fd.TestFunction(V)
+    F = (fd.inner(fd.grad(u), fd.grad(v)) + fd.inner(u, v) - fd.inner(f, v)) * fd.dx
+    return F
+  def solve(self,u,f,V):
+    v = fd.TestFunction(V)
+    F = (fd.inner(fd.grad(u), fd.grad(v)) + fd.inner(u, v) - fd.inner(f, v)) * fd.dx
+    bc = fd.DirichletBC(V, fd.Constant(1.0), "on_boundary")
+    fd.solve(F == 0,u, bcs = [bc])
+    return u
 
-        v = fd.TestFunction(V)
-        F = self.PDE_definition(u,f,V)
-        bc = self.BC_definition(V, fd.Constant(1.0))
-        fd.solve(F == 0, u, bcs = [bc])
-        return u
+class Control_Poisson(Poisson):
+  def __init__(self,model):
+    super(Control_Poisson,self).__init__()
+    self.model = model
+    self.optimiser = optim.AdamW(self.model.parameters(), lr = 1e-3, eps=1e-8)
+  def control_problem(self,f,V):
+    u = fd.Function(V)
+    F = self.PDE_definition(u,f,V)
+    bc = fd.DirichletBC(V, fd.Constant(1.0), "on_boundary")
+    # Solve
+    fd.solve(F == 0, u, bcs = [bc])
+    # measure with pattern
+    x,y = fd.SpatialCoordinate(self.mesh)
+    u_j = fd.Function(V)
+    u_j.interpolate(0.5*fd.exp((-1*(x-0.25)**2)/0.01) + 0.5*fd.exp((-1*(x-0.75)**2)/0.01))
 
-    def control_problem(self, f, V):
-        """
-        example of control problem:
-        this control problem finds the source term such that the solution has shape u_j
-        """
-        u = fd.Function(V)
-        u_sol = self.solve(u,f,V)
 
-        x,y = fd.SpatialCoordinate(self.mesh)
-        u_j = fd.Function(V)
-        u_j.interpolate(0.5*fd.exp((-1*(x-0.25)**2)/0.01) + 0.5*fd.exp((-1*(x-0.75)**2)/0.01))
-        return fd.assemble(((u_j-u_sol)**2)*fd.dx)
-        
+    return fd.assemble(((u_j-u)**2)*fd.dx)
 
-    def control_f(self, u, V):
-        """
-        control problem example:
-        ml model estimates source (f) as a mapping from coordinates to f
-        """
-        x,y = fd.SpatialCoordinate(self.mesh)
-        fx = fd.Function(V)
-        fx.interpolate(x)
-        fy = fd.Function(V)
-        fy.interpolate(y)
+  def control_f(self,u,V):
 
-        f_x = fd.ml.pytorch.to_torch(fx)
-        f_y = fd.ml.pytorch.to_torch(fy)
 
-        f_p = self.model(x,y)
+    x,y = fd.SpatialCoordinate(self.mesh)
+    fx = fd.Function(V)
+    fy = fd.Function(V)
+    fx.interpolate(x)
+    fy.interpolate(y)
+    f_x = fd.ml.pytorch.to_torch(fx)
+    f_y = fd.ml.pytorch.to_torch(fy)
+    f_p = self.model(f_x,f_y)
 
-        fd.adjoint.continue_annotation()
-        f = fd.Function(V)
-        c = fd.adjoint.Control(f)
+    fd.adjoint.continue_annotation()
 
-        Jhat = fd.adjoint.ReducedFunctional(self.control_problem(f,V),c)
-        G = fd.ml.pytorch.torch_operator(Jhat)
+    f = fd.Function(V)
+    c = fd.adjoint.Control(f)
 
-        fd.adjoint.stop_annotating()
-
-        composed_function_loss = G(f_p)
-
-        return composed_function_loss
-
-#    def optimization_iteration(self):
+    #with fd.adjoint.set_working_tape() as tape:
+    Jhat = fd.adjoint.ReducedFunctional(self.control_problem(f,V),c)
+    G = fd.ml.pytorch.torch_operator(Jhat)
+    fd.adjoint.stop_annotating()
+    composed_functional_loss = G(f_p)
+    #loss_p.backward()
+    #self.optimiser.step()
+    return composed_functional_loss,f_p
 
 
 
-class poisson_BC_control(linear_poisson):
+class poisson_BC_control(Poisson):
     def __init__(self,V,g,**args):
         super().__init__(**args)
         _ = self.BC_definition(V,g)
