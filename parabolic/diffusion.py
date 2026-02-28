@@ -8,11 +8,12 @@ from functools import reduce
 
 
 class linear_diffusion(object):
-    def __init__(self, mesh: fd.mesh.MeshGeometry, phi: float = 0.2, c_t: float = 1.0, dt: float = 1.0):
+    def __init__(self, mesh: fd.mesh.MeshGeometry, phi: float = 0.2, c_t: float = 1.0, dt: float = 1.0, T: float = 10.0):
         self.mesh = mesh 
         self.phi = fd.Constant(phi)
         self.c_t = fd.Constant(c_t)
         self.dt = fd.Constant(dt)
+        self.T = T
 
         self.theta = fd.Constant(1.0)
 
@@ -60,11 +61,12 @@ class linear_diffusion(object):
                 p: fd.function.Function,
                 q_h: List[fd.function.Function],
                 V: fd.functionspaceimpl.WithGeometry,
-                num_step: int
                 ):
         bc = self.BC_definition(V, fd.Constant(0.0))
         p_n = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(5.0)))
         p_h = [copy.deepcopy(p_n)]
+
+        num_step = int(self.T/self.dt)
 
         for nstep in range(1,num_step+1):
             F = self.PDE_definition( p, p_n, q_h[nstep+1], q_h[nstep], V)
@@ -100,13 +102,15 @@ class control_linear_diffusion(linear_diffusion):
         control problem example:
         ml model estimates source (f) as a mapping from coordinates to f
         """
+        num_step = int(self.T/self.dt)
         dof_f = self.get_coordinate_functions(V)
         dof_f = tuple(fd.ml.pytorch.to_torch(dof_f_) for dof_f_ in dof_f)
+        t_encoding = list(self.dt*step for step in range(num_step))
 
-        f_p = self.model(*dof_f)
+        f_p = self.model(*dof_f,t_encoding)
 
         fd.adjoint.continue_annotation()
-        q_h = list(fd.Function(V) for _ in range(len()))
+        q_h = list(fd.Function(V) for _ in range(len(p_h_tilde)))
         c = map(fd.adjoint.Control, q_h)
         Jhat = fd.adjoint.ReducedFunctional(
             self.control_problem(
