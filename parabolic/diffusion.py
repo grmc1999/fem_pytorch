@@ -105,7 +105,7 @@ class control_linear_diffusion(linear_diffusion):
         num_step = int(self.T/self.dt.values())
         dof_f = self.get_coordinate_functions(V)
         dof_f = tuple(fd.ml.pytorch.to_torch(dof_f_) for dof_f_ in dof_f)
-        t_encoding = list(fd.ml.pytorch.to_torch(self.dt*step) for step in range(num_step))
+        t_encoding = list(torch.tensor(LD.dt.values()).unsqueeze(0)*step for step in range(num_step))
 
         f_p = self.model(*dof_f,t_encoding)
 
