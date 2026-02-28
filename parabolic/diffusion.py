@@ -102,7 +102,7 @@ class control_linear_diffusion(linear_diffusion):
         control problem example:
         ml model estimates source (f) as a mapping from coordinates to f
         """
-        num_step = int(self.T/self.dt)
+        num_step = int(self.T/self.dt.values())
         dof_f = self.get_coordinate_functions(V)
         dof_f = tuple(fd.ml.pytorch.to_torch(dof_f_) for dof_f_ in dof_f)
         t_encoding = list(self.dt*step for step in range(num_step))
