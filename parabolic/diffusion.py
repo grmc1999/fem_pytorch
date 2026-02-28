@@ -66,7 +66,7 @@ class linear_diffusion(object):
         p_n = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(5.0)))
         p_h = [copy.deepcopy(p_n)]
 
-        num_step = int(self.T/self.dt)
+        num_step = int(self.T/self.dt.values())
 
         for nstep in range(1,num_step+1):
             F = self.PDE_definition( p, p_n, q_h[nstep+1], q_h[nstep], V)
