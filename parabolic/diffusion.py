@@ -63,7 +63,7 @@ class linear_diffusion(object):
                 V: fd.functionspaceimpl.WithGeometry,
                 ):
         bc = self.BC_definition(V, fd.Constant(0.0))
-        p_n = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(5.0)))
+        p_n = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(0.0)))
         p_h = [copy.deepcopy(p_n)]
 
         num_step = int(self.T/self.dt.values())
