@@ -67,7 +67,6 @@ class linear_diffusion(object):
         p_h = [copy.deepcopy(p_n)]
 
         for nstep in range(1,num_step+1):
-            print(f"step {nstep}")
             F = self.PDE_definition( p, p_n, q_h[nstep+1], q_h[nstep], V)
             fd.solve(F == 0, p, bcs = [bc])
             p_h.append(copy.deepcopy(p))
@@ -102,6 +101,7 @@ class control_linear_diffusion(linear_diffusion):
         ml model estimates source (f) as a mapping from coordinates to f
         """
         dof_f = self.get_coordinate_functions(V)
+        dof_f = tuple(fd.ml.pytorch.to_torch(dof_f_) for dof_f_ in dof_f)
 
         f_p = self.model(*dof_f)
 
