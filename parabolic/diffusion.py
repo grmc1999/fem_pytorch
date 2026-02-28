@@ -83,14 +83,13 @@ class control_linear_diffusion(linear_diffusion):
         self.optimiser = optim.AdamW(self.model.parameters(), lr = 1e-3, eps=1e-8)
         self.num_step = num_step
 
-    def control_problem(self, q_h: List[fd.function.Function], p_h_tilde: List[fd.function.Function], V, num_step: int):
+    def control_problem(self, q_h: List[fd.function.Function], p_h_tilde: List[fd.function.Function], V):
 
         p = fd.Function(V)
         p_sol = self.solve(
             p = p,
             q_h= q_h,
-            V = V,
-            num_step = num_step
+            V = V
         )
         assert len(p_sol) == len(p_h_tilde)
 
@@ -116,8 +115,7 @@ class control_linear_diffusion(linear_diffusion):
             self.control_problem(
                 q_h = q_h,
                 p_h_tilde = p_h_tilde,
-                V = V,
-                num_step = self.num_step
+                V = V
             ),
             c)
         G = fd.ml.pytorch.torch_operator(Jhat)
