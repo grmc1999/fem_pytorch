@@ -34,8 +34,8 @@ class linear_diffusion(object):
         Docstring for PDE_definition
         :param p: at p_{n+1}
         :param p_n: at p_n
-        :param q: at p_{n+1}
-        :param q_n: at p_n
+        :param q: at q_{n+1}
+        :param q_n: at q_n
         :param V: Description
         """
         v = fd.TestFunction(V)
@@ -65,6 +65,8 @@ class linear_diffusion(object):
         bc = self.BC_definition(V, fd.Constant(0.0))
         p_n = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(0.0)))
         p_h = [copy.deepcopy(p_n)]
+
+        q_h = [q_h[0]] + q_h
 
         num_step = int(self.T/self.dt.values())
 
