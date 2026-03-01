@@ -70,7 +70,7 @@ class linear_diffusion(object):
 
         num_step = int(self.T/self.dt.values())
 
-        for nstep in range(num_step):
+        for nstep in range(num_step-1):
             F = self.PDE_definition( p, p_n, q_h[nstep+1], q_h[nstep], V)
             fd.solve(F == 0, p, bcs = [bc])
             p_h.append(copy.deepcopy(p))
