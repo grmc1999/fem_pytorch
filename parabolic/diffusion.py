@@ -96,7 +96,7 @@ class control_linear_diffusion(linear_diffusion):
         assert len(p_sol) == len(p_h_tilde), f"shapes p_sol {len(p_sol)} and p_h_tilde {len(p_h_tilde)} are not equal "
 
         cost = reduce(lambda a,b: a+b, list( ((p_ - p_tilde)**2)*fd.dx for p_,p_tilde in zip(p_sol,p_h_tilde)))
-        return cost
+        return fd.assemble(cost)
     
     def control_f(self, p_h_tilde: List[fd.function.Function], V):
         """
