@@ -113,7 +113,7 @@ class control_linear_diffusion(linear_diffusion):
         fd.adjoint.continue_annotation()
         q_h = list(fd.Function(V) for _ in range(len(p_h_tilde)))
 
-        c = map(fd.adjoint.Control, q_h)
+        c = list(map(fd.adjoint.Control, q_h))
         Jhat = fd.adjoint.ReducedFunctional(
             self.control_problem(
                 q_h = q_h,
