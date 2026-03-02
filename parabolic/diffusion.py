@@ -142,7 +142,7 @@ class control_linear_diffusion(linear_diffusion):
         composed_function_loss = 0
 
         for step in range(num_step-1):
-           print(f"step {step}")
+           print(f"step {step} out of {num_step}")
 
            q = q_h[step+1]
            q_n = q_h[step]
