@@ -118,7 +118,7 @@ class control_linear_diffusion(linear_diffusion):
 
         cost = ((p_sol - p_n_tilde)**2)*fd.dx
         #e(lambda a,b: a+b, list( ((p_ - p_tilde)**2)*fd.dx for p_,p_tilde in zip(p_sol,p_h_tilde)))
-        return fd.assemble(cost)
+        return fd.assemble(cost), p_sol
     
     def control_f(self, p_h_tilde: List[fd.function.Function], V):
         """
@@ -139,6 +139,7 @@ class control_linear_diffusion(linear_diffusion):
         q_h = list(fd.Function(V) for _ in range(len(p_h_tilde)))
 
         G_h = []
+        composed_function_loss = 0
 
         for step in range(num_step-1):
 
@@ -146,7 +147,7 @@ class control_linear_diffusion(linear_diffusion):
            q_n = q_h[step]
            
            c = fd.adjoint.Control(q)
-           Jhat = fd.adjoint.ReducedFunctional(
+           Jhat, p_sol = fd.adjoint.ReducedFunctional(
                 self.control_problem(
                     p_n = p_h[step],
                     q = q,
@@ -155,19 +156,16 @@ class control_linear_diffusion(linear_diffusion):
                     V = V
                     ),
                     c)
+           
+           p_h.append(p_sol)
+
            G = fd.ml.pytorch.torch_operator(Jhat)
            G_h.append(G)
-
+           t_encoding = torch.tensor(self.dt.values()).unsqueeze(0)*step
+           f_p = self.model(*dof_f,t_encoding)
+           composed_function_loss = composed_function_loss + G_h[step](f_p)
+        
         fd.adjoint.stop_annotating()
-
-        # Compute all steps loss
-        composed_function_loss = 0
-        for step in range(num_step - 1):
-            t_encoding = torch.tensor(self.dt.values()).unsqueeze(0)*step
-
-            f_p = self.model(*dof_f,t_encoding)
-
-            composed_function_loss = composed_function_loss + G_h[step](f_p)
 
 
         return composed_function_loss,f_p
