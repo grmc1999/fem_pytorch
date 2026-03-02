@@ -147,15 +147,16 @@ class control_linear_diffusion(linear_diffusion):
            q_n = q_h[step]
            
            c = fd.adjoint.Control(q)
-           Jhat, p_sol = fd.adjoint.ReducedFunctional(
-                self.control_problem(
+
+           cost, p_sol = self.control_problem(
                     p_n = p_h[step],
                     q = q,
                     q_n = q_n,
                     p_n_tilde = p_h_tilde[step],
                     V = V
-                    ),
-                    c)
+                    )
+           
+           Jhat, p_sol = fd.adjoint.ReducedFunctional(cost,c)
            
            p_h.append(p_sol)
 
