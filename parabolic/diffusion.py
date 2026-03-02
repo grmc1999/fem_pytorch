@@ -77,6 +77,19 @@ class linear_diffusion(object):
             p_n.interpolate(p)
         return p_h
     
+    def solve_step(self,
+                p: fd.function.Function,
+                p_n: fd.function.Function,
+                q: fd.function.Function,
+                q_n: fd.function.Function,
+                V: fd.functionspaceimpl.WithGeometry,
+                ):
+        
+        bc = self.BC_definition(V, fd.Constant(0.0))
+        F = self.PDE_definition( p, p_n, q, q_n, V)
+        fd.solve(F == 0, p, bcs = [bc])
+        return p
+    
 
 class control_linear_diffusion(linear_diffusion):
     def __init__(self,model: nn.Module, num_step: int,**args):
@@ -85,17 +98,26 @@ class control_linear_diffusion(linear_diffusion):
         self.optimiser = optim.AdamW(self.model.parameters(), lr = 1e-3, eps=1e-8)
         self.num_step = num_step
 
-    def control_problem(self, q_h: List[fd.function.Function], p_h_tilde: List[fd.function.Function], V):
+    def control_problem(self,
+                        p_n: fd.function.Function,
+                        q: fd.function.Function,
+                        q_n: fd.function.Function,
+                        p_n_tilde: fd.function.Function,
+                        V
+                        ):
 
         p = fd.Function(V)
-        p_sol = self.solve(
+        p_sol = self.solve_step(
             p = p,
-            q_h= q_h,
-            V = V
+            p_n = p_n,
+            q = q,
+            q_n = q_n,
+            V = V,
         )
-        assert len(p_sol) == len(p_h_tilde), f"shapes p_sol {len(p_sol)} and p_h_tilde {len(p_h_tilde)} are not equal "
+        #assert len(p_sol) == len(p_h_tilde), f"shapes p_sol {len(p_sol)} and p_h_tilde {len(p_h_tilde)} are not equal "
 
-        cost = reduce(lambda a,b: a+b, list( ((p_ - p_tilde)**2)*fd.dx for p_,p_tilde in zip(p_sol,p_h_tilde)))
+        cost = ((p_sol - p_n_tilde)**2)*fd.dx
+        #e(lambda a,b: a+b, list( ((p_ - p_tilde)**2)*fd.dx for p_,p_tilde in zip(p_sol,p_h_tilde)))
         return fd.assemble(cost)
     
     def control_f(self, p_h_tilde: List[fd.function.Function], V):
@@ -106,25 +128,47 @@ class control_linear_diffusion(linear_diffusion):
         num_step = int(self.T/self.dt.values())
         dof_f = self.get_coordinate_functions(V)
         dof_f = tuple(fd.ml.pytorch.to_torch(dof_f_) for dof_f_ in dof_f)
-        t_encoding = list(torch.tensor(self.dt.values()).unsqueeze(0)*step for step in range(num_step))
+        
+        bc = self.BC_definition(V, fd.Constant(0.0))
+        p_n = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(0.0)))
+        p_h = [copy.deepcopy(p_n)]
 
-        f_p = self.model(*dof_f,t_encoding)
-
+        # Compile all step graph
         fd.adjoint.continue_annotation()
+        
         q_h = list(fd.Function(V) for _ in range(len(p_h_tilde)))
 
-        c = list(map(fd.adjoint.Control, q_h))
-        Jhat = fd.adjoint.ReducedFunctional(
-            self.control_problem(
-                q_h = q_h,
-                p_h_tilde = p_h_tilde,
-                V = V
-            ),
-            c)
-        G = fd.ml.pytorch.torch_operator(Jhat)
+        G_h = []
+
+        for step in range(num_step-1):
+
+           q = q_h[step+1]
+           q_n = q_h[step]
+           
+           c = fd.adjoint.Control(q)
+           Jhat = fd.adjoint.ReducedFunctional(
+                self.control_problem(
+                    p_n = p_h[step],
+                    q = q,
+                    q_n = q_n,
+                    p_n_tilde = p_h_tilde[step],
+                    V = V
+                    ),
+                    c)
+           G = fd.ml.pytorch.torch_operator(Jhat)
+           G_h.append(G)
+
         fd.adjoint.stop_annotating()
 
-        composed_function_loss = G(f_p)
+        # Compute all steps loss
+        composed_function_loss = 0
+        for step in range(num_step - 1):
+            t_encoding = torch.tensor(self.dt.values()).unsqueeze(0)*step
+
+            f_p = self.model(*dof_f,t_encoding)
+
+            composed_function_loss = composed_function_loss + G_h[step](f_p)
+
 
         return composed_function_loss,f_p
 
