@@ -156,7 +156,7 @@ class control_linear_diffusion(linear_diffusion):
                     V = V
                     )
            
-           Jhat, p_sol = fd.adjoint.ReducedFunctional(cost,c)
+           Jhat = fd.adjoint.ReducedFunctional(cost,c)
            
            p_h.append(p_sol)
 
