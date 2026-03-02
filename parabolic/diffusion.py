@@ -162,7 +162,7 @@ class control_linear_diffusion(linear_diffusion):
 
            G = fd.ml.pytorch.torch_operator(Jhat)
            G_h.append(G)
-           t_encoding = torch.tensor(self.dt.values()).unsqueeze(0)*step
+           t_encoding = torch.tensor(self.dt.values()).unsqueeze(0).unsqueeze(0)*step
            f_p = self.model(*dof_f,t_encoding)
            composed_function_loss = composed_function_loss + G_h[step](f_p)
         
