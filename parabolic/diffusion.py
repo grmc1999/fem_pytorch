@@ -172,5 +172,5 @@ class control_linear_diffusion(linear_diffusion):
         fd.adjoint.stop_annotating()
 
 
-        return composed_function_loss,p_h
+        return composed_function_loss,p_h,q_h_
 
