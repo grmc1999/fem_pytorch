@@ -136,9 +136,10 @@ class control_linear_diffusion(linear_diffusion):
         # Compile all step graph
         fd.adjoint.continue_annotation()
         
-        q_h = list(fd.Function(V) for _ in range(len(p_h_tilde)))
-
         G_h = []
+        q_h_ = []
+
+        q_h = list(fd.Function(V) for _ in range(len(p_h_tilde)))
         composed_function_loss = 0
 
         for step in range(num_step-1):
@@ -165,6 +166,7 @@ class control_linear_diffusion(linear_diffusion):
            G_h.append(G)
            t_encoding = torch.tensor(self.dt.values()).unsqueeze(0)*step
            f_p = self.model(*dof_f,t_encoding)
+           q_h_.append(f_p.detach().numpy())
            composed_function_loss = composed_function_loss + G_h[step](f_p)
         
         fd.adjoint.stop_annotating()
