@@ -25,7 +25,8 @@ def set_initial_frame(fig: matplotlib.figure.Figure, ax: plt.Axes, field: List[f
   return global_levels_p
 
 def redraw_frame(current_field: fd.function.Function, global_levels_p: List[np.ndarray[float]], ax: plt.Axes, i: int):
-  tricontourf(current_field[i], levels=global_levels_p, axes=ax, cmap="inferno")
+    print(i)
+    tricontourf(current_field[i], levels=global_levels_p, axes=ax, cmap="inferno")
 
 def animate_solution(loss: np.ndarray[float], fields: Tuple[List[fd.function.Function]], titles: List[str]):
 
@@ -37,6 +38,7 @@ def animate_solution(loss: np.ndarray[float], fields: Tuple[List[fd.function.Fun
   global_levels_p = tuple(set_initial_frame(fig, ax, field, title) for ax, field, title in zip(axs, fields, titles))
 
   plt.tight_layout() # Adjust layout for both initial plots
+  tuple(print(len(field)) for field in fields)
 
   def animate(i):
     map(lambda ax: ax.clear(), axs)
@@ -46,7 +48,7 @@ def animate_solution(loss: np.ndarray[float], fields: Tuple[List[fd.function.Fun
     return []
 
   anim = animation.FuncAnimation(
-      fig, animate, frames=len(fields[0]), interval=200, blit=False
+      fig, animate, frames=min(tuple(map(len,fields))), interval=200, blit=False
   )
   plt.close(fig)
   return anim
