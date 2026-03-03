@@ -3,6 +3,9 @@ from models.models import model_diffusion
 import torch
 from torch import nn
 import firedrake as fd
+import firedrake as fd
+from firedrake import adjoint
+from firedrake.ml import pytorch
 
 mesh = fd.UnitSquareMesh(50,50)
 num_step=20
