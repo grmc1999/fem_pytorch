@@ -2,7 +2,9 @@ from typing import List,Tuple
 import matplotlib
 import matplotlib.pyplot as plt
 from firedrake.pyplot import tricontourf
+import firedrake as fd
 import numpy as np
+import matplotlib.animation as animation
 
 def set_initial_frame(fig: matplotlib.figure.Figure, ax: plt.Axes, field: List[fd.function.Function], title: str):
   all_p_data = np.concatenate([p_step.dat.data[:] for p_step in field])
@@ -24,9 +26,6 @@ def set_initial_frame(fig: matplotlib.figure.Figure, ax: plt.Axes, field: List[f
 
 def redraw_frame(current_field: fd.function.Function, global_levels_p: List[np.ndarray[float]], ax: plt.Axes, i: int):
   tricontourf(current_field[i], levels=global_levels_p, axes=ax, cmap="inferno")
-  ax_p.set_title(f"Solution u at time step {i}")
-  ax_p.set_aspect("equal")
-  #return []
 
 def animate_solution(loss: np.ndarray[float], fields: Tuple[List[fd.function.Function]], titles: List[str]):
 
