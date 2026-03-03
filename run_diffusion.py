@@ -42,6 +42,6 @@ for epoch in range(train_iterations):
     h_loss.append(composed_function_loss.detach().numpy())
     anim = animate_solution(h_loss, (p_h,q_h_), (f"Solution at epoch {epoch}",f"Control signal at epoch {epoch}"))
     
-    Writer = animation.writers['ffmpeg']
+    Writer = animation.writers['html']
     writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
     anim.save(f'im_{epoch}.mp4', writer=writer)
