@@ -7,6 +7,8 @@ import firedrake as fd
 from firedrake import adjoint
 from firedrake.ml import pytorch
 from firedrake.adjoint import continue_annotation
+from utils.viz import animate_solution
+import matplotlib.animation as animation
 
 mesh = fd.UnitSquareMesh(50,50)
 num_step=20
@@ -33,5 +35,13 @@ CLD = control_linear_diffusion(
 
 
 train_iterations = 20
+h_loss = []
 for epoch in range(train_iterations):
+    print(f"epoch {epoch}")
     composed_function_loss,p_h,q_h_ = CLD.control_f(p_h_tilde = q_h,V = V)
+    h_loss.append(composed_function_loss.detach().numpy())
+    anim = animate_solution(h_loss, (p_h,q_h_), (f"Solution at epoch {epoch}",f"Control signal at epoch {epoch}"))
+    
+    Writer = animation.writers['ffmpeg']
+    writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
+    anim.save(f'im_{epoch}.mp4', writer=writer)
