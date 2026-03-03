@@ -44,4 +44,4 @@ for epoch in range(train_iterations):
     
     Writer = animation.writers['html']
     writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
-    anim.save(f'im_{epoch}.mp4', writer=writer)
+    anim.save(f'im_{epoch}.html', writer=writer)
