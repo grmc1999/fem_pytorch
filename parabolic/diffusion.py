@@ -166,7 +166,9 @@ class control_linear_diffusion(linear_diffusion):
            G_h.append(G)
            t_encoding = torch.tensor(self.dt.values()).unsqueeze(0)*step
            f_p = self.model(*dof_f,t_encoding)
-           q_h_.append(f_p.detach().numpy())
+           q_h_sol = fd.Function(V)
+           q_h_sol.dat.data[:] = f_p.detach().numpy()
+           q_h_.append(q_h_sol)
            composed_function_loss = composed_function_loss + G_h[step](f_p)
         
         fd.adjoint.stop_annotating()

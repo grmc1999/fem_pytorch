@@ -6,6 +6,7 @@ import firedrake as fd
 import firedrake as fd
 from firedrake import adjoint
 from firedrake.ml import pytorch
+from firedrake.adjoint import continue_annotation
 
 mesh = fd.UnitSquareMesh(50,50)
 num_step=20
@@ -29,3 +30,8 @@ CLD = control_linear_diffusion(
     dt = 0.1,
     T = 0.5
     )
+
+
+train_iterations = 20
+for epoch in range(train_iterations):
+    composed_function_loss,p_h,q_h_ = CLD.control_f(p_h_tilde = q_h,V = V)
