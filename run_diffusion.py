@@ -40,6 +40,8 @@ h_loss = []
 for epoch in range(train_iterations):
     print(f"epoch {epoch}")
     composed_function_loss,p_h,q_h_ = CLD.control_f(p_h_tilde = q_h,V = V)
+    composed_function_loss.backward()
+    CLD.optimiser.step()
     h_loss.append(composed_function_loss.detach().numpy())
     anim = animate_solution(h_loss, (p_h,q_h_), (f"Solution at epoch {epoch}",f"Control signal at epoch {epoch}"))
     
