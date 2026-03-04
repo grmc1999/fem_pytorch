@@ -92,11 +92,10 @@ class linear_diffusion(object):
     
 
 class control_linear_diffusion(linear_diffusion):
-    def __init__(self,model: nn.Module, num_step: int,**args):
+    def __init__(self,model: nn.Module, **args):
         super().__init__(**args)
         self.model = model
         self.optimiser = optim.AdamW(self.model.parameters(), lr = 1e-3, eps=1e-8)
-        self.num_step = num_step
 
     def control_problem(self,
                         p_n: fd.function.Function,
