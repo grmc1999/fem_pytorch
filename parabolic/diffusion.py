@@ -118,7 +118,7 @@ class control_linear_diffusion(linear_diffusion):
         cost = ((p_sol - p_n_tilde)**2)*fd.dx
         #e(lambda a,b: a+b, list( ((p_ - p_tilde)**2)*fd.dx for p_,p_tilde in zip(p_sol,p_h_tilde)))
         return fd.assemble(cost), p_sol
-    
+
     def control_f(self, p_h_tilde: List[fd.function.Function], V):
         """
         control problem example:
@@ -127,25 +127,27 @@ class control_linear_diffusion(linear_diffusion):
         num_step = int(self.T/self.dt.values())
         dof_f = self.get_coordinate_functions(V)
         dof_f = tuple(fd.ml.pytorch.to_torch(dof_f_) for dof_f_ in dof_f)
-        
+
         bc = self.BC_definition(V, fd.Constant(0.0))
         p_n = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(0.0)))
         p_h = [copy.deepcopy(p_n)]
 
         # Compile all step graph
         fd.adjoint.continue_annotation()
-        
+
         G_h = []
         q_h_ = []
 
-        q_h = list(fd.Function(V) for _ in range(len(p_h_tilde)))
         composed_function_loss = 0
 
         for step in range(num_step-1):
+           #q = q_h[step+1]
+           q = fd.Function(V)
+           q.dat.data[:] = self.model(*dof_f,torch.tensor(self.dt.values()).unsqueeze(0)*step).detach().numpy()
+           #q_n = q_h[step]
+           q_n = fd.Function(V)
+           q_n.dat.data[:] = self.model(*dof_f,torch.tensor(self.dt.values()).unsqueeze(0)*(step+1)).detach().numpy()
 
-           q = q_h[step+1]
-           q_n = q_h[step]
-           
            c = fd.adjoint.Control(q)
 
            cost, p_sol = self.control_problem(
@@ -155,20 +157,22 @@ class control_linear_diffusion(linear_diffusion):
                     p_n_tilde = p_h_tilde[step],
                     V = V
                     )
-           
+
            Jhat = fd.adjoint.ReducedFunctional(cost,c)
-           
-           p_h.append(p_sol)
+
+           p_h.append(copy.deepcopy(p_sol))
 
            G = fd.ml.pytorch.torch_operator(Jhat)
            G_h.append(G)
-           t_encoding = torch.tensor(self.dt.values()).unsqueeze(0)*step
+           t_encoding = torch.tensor(self.dt.values()).unsqueeze(0)*(step + 1)
            f_p = self.model(*dof_f,t_encoding)
+
+
+           composed_function_loss = composed_function_loss + G_h[step](f_p)
            q_h_sol = fd.Function(V)
            q_h_sol.dat.data[:] = f_p.detach().numpy()
-           q_h_.append(q_h_sol)
-           composed_function_loss = composed_function_loss + G_h[step](f_p)
-        
+           q_h_.append(q_h_sol.copy(deepcopy=True))
+
         fd.adjoint.stop_annotating()
 
 

@@ -24,9 +24,10 @@ def set_initial_frame(fig: matplotlib.figure.Figure, ax: plt.Axes, field: List[f
   cbar_p = fig.colorbar(initial_contour_p, ax=ax, label=f"{title} Value")
   return global_levels_p
 
-def redraw_frame(current_field: fd.function.Function, global_levels_p: List[np.ndarray[float]], ax: plt.Axes, i: int):
-    #print(i)
+def redraw_frame(current_field: fd.function.Function, global_levels_p: List[np.ndarray[float]], ax: plt.Axes, i: int, title: str):
     tricontourf(current_field[i], levels=global_levels_p, axes=ax, cmap="inferno")
+    ax.set_title(f"{title} at time step {i}")
+    ax.set_aspect("equal")
 
 def animate_solution(loss: np.ndarray[float], fields: Tuple[List[fd.function.Function]], titles: List[str]):
 
@@ -38,12 +39,11 @@ def animate_solution(loss: np.ndarray[float], fields: Tuple[List[fd.function.Fun
   global_levels_p = tuple(set_initial_frame(fig, ax, field, title) for ax, field, title in zip(axs, fields, titles))
 
   plt.tight_layout() # Adjust layout for both initial plots
-  #tuple(print(len(field)) for field in fields)
 
   def animate(i):
     map(lambda ax: ax.clear(), axs)
 
-    list(redraw_frame(current_p, global_level_p, ax, i) for current_p, global_level_p, ax in zip(fields, global_levels_p, axs))
+    list(redraw_frame(current_p, global_level_p, ax, i, title) for current_p, global_level_p, ax, title in zip(fields, global_levels_p, axs, titles))
 
     return []
 
