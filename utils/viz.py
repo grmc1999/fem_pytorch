@@ -31,7 +31,7 @@ def redraw_frame(current_field: fd.function.Function, global_levels_p: List[np.n
 
 def animate_solution(loss: np.ndarray[float], fields: Tuple[List[fd.function.Function]], titles: List[str]):
 
-  fig, axs = plt.subplots(1, int(len(fields)+1), figsize=(14, 6))
+  fig, axs = plt.subplots(1, int(len(fields)+1), figsize=(int(7*(len(fields) + 1)), 6))
 
   axs[0].plot(loss)
   axs = axs[1:]
