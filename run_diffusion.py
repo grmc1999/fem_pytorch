@@ -10,7 +10,7 @@ from firedrake.adjoint import continue_annotation
 from utils.viz import animate_solution
 import matplotlib.animation as animation
 
-mesh = fd.UnitSquareMesh(50,50)
+mesh = fd.UnitSquareMesh(20,20)
 num_step=20
 V = fd.FunctionSpace(mesh, "CG", 1)
 
@@ -38,8 +38,9 @@ CLD = control_linear_diffusion(
 train_iterations = 20
 h_loss = []
 for epoch in range(train_iterations):
-    print(f"epoch {epoch}")
+
     composed_function_loss,p_h,q_h_ = CLD.control_f(p_h_tilde = q_h,V = V)
+    print(f"epoch {epoch}, loss {composed_function_loss}")
     composed_function_loss.backward()
     CLD.optimiser.step()
     h_loss.append(composed_function_loss.detach().numpy())
