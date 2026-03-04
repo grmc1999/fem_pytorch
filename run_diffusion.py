@@ -20,15 +20,15 @@ q_h = list(fd.Function(V).interpolate(
     fd.exp(-1*((X[0]-0.5)**2 + (X[1]-0.5)**2 )/0.001)
 ) for _ in range(num_step+2))
 LD = linear_diffusion(mesh,dt = 0.01, T = 0.5)
-T = 0.5
+
 dt = 0.1
+T = 0.5
 q_h = list(fd.Function(V).interpolate(
     fd.exp(-1*((X[0]-0.5)**2 + (X[1]-0.5)**2 )/0.001)
 ) for _ in range(int(T/dt)+2))
 
 CLD = control_linear_diffusion(
     model = model_diffusion(V.dim()).double(),
-    num_step = 20,
     mesh = mesh,
     dt = 0.1,
     T = 0.5

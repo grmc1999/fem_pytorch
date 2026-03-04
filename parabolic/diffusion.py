@@ -43,7 +43,6 @@ class linear_diffusion(object):
         p_theta = self.theta*p + (1 - self.theta)*p_n
         q_theta = self.theta*q + (1 - self.theta)*q_n
 
-#        F = (((self.phi*self.c_t)/self.dt)*(p - p_n)*v)*fd.dx + fd.inner( fd.grad(p_theta), fd.grad(v)) * fd.dx - (q_theta)*fd.dx
         F = (((self.phi*self.c_t)/self.dt)*(p - p_n)*v)*fd.dx \
             + fd.inner( fd.grad(p_theta), fd.grad(v)) * fd.dx \
             - (q_theta*v)*fd.dx
@@ -101,7 +100,7 @@ class control_linear_diffusion(linear_diffusion):
                         p_n: fd.function.Function,
                         q: fd.function.Function,
                         q_n: fd.function.Function,
-                        p_n_tilde: fd.function.Function,
+                        p_tilde: fd.function.Function,
                         V
                         ):
 
@@ -115,7 +114,7 @@ class control_linear_diffusion(linear_diffusion):
         )
         #assert len(p_sol) == len(p_h_tilde), f"shapes p_sol {len(p_sol)} and p_h_tilde {len(p_h_tilde)} are not equal "
 
-        cost = ((p_sol - p_n_tilde)**2)*fd.dx
+        cost = ((p_sol - p_tilde)**2)*fd.dx
         #e(lambda a,b: a+b, list( ((p_ - p_tilde)**2)*fd.dx for p_,p_tilde in zip(p_sol,p_h_tilde)))
         return fd.assemble(cost), p_sol
 
@@ -154,7 +153,7 @@ class control_linear_diffusion(linear_diffusion):
                     p_n = p_h[step],
                     q = q,
                     q_n = q_n,
-                    p_n_tilde = p_h_tilde[step],
+                    p_tilde = p_h_tilde[step+1],
                     V = V
                     )
 
