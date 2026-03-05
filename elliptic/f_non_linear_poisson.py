@@ -9,7 +9,7 @@ class non_linear_poisson(linear_poisson):
   def PDE_definition(self,u,f,V,K):
     v = fd.TestFunction(V)
     k = fd.Function(K)
-    x = fd.SpatialCoordinate(mesh)
+    x = fd.SpatialCoordinate(self.mesh)
     # Spatial coordinate dependent
     k.interpolate(ufl.as_tensor([[x[0]**2  , x[0]*x[1]],
                                  [x[0]*x[1], x[1]**2]]))
