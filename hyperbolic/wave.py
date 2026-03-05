@@ -20,6 +20,12 @@ class linear_wave(object):
     def get_coordinate_functions(self ,V: fd.functionspaceimpl.WithGeometry):
         return tuple(fd.Function(V).interpolate(dof) for dof in fd.SpatialCoordinate(self.mesh))
         
+    def IC_definition(self):
+        return self.ic
+    
+    def BC_definition(self):
+        return self.bc
+
     def PDE_definition(self,
                        u: fd.function.Function,
                        V: fd.functionspaceimpl.WithGeometry
@@ -30,4 +36,5 @@ class linear_wave(object):
         M = fd.assemble(u * v * fd.dx)
         K = fd.assemble(self.c**2 * fd.inner(fd.grad(u), fd.grad(v)) * fd.dx)
 
+        # Combined matrix for Newmark: A = M + β Δt² K
         A = M + (self.beta * self.dt.values()[0]**2)
