@@ -73,20 +73,20 @@ class linear_wave(object):
         e_o = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(0.0)))
         e_c = self.IC_definition(V,fd.Function(V).interpolate(fd.Constant(0.0)))
         e_h = [copy.deepcopy(e_o), copy.deepcopy(e_c)]
-
+        
         num_step = int(self.T/self.dt.values())
 
         for nstep in range(2,num_step):
             print(f"check this value should be 0 {nstep-2}")
             M,rhs = self.PDE_definition(
-                e_n = e_h[nstep-2],
-                e_c = e_h[nstep-1],
-                e_o = e_h[nstep],
+                e_n = e_n,
+                e_c = e_c,
+                e_o = e_o,
                 f = f[nstep],
                 V = V
                 )
             fd.solve(M == rhs, e_n, bcs=[bc])
-            e_h.append(copy.deepcopy(p))
+            e_h.append(copy.deepcopy(e_n))
             e_o.assing(e_c)
             e_c.assing(e_n)
         return e_h
