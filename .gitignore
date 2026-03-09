@@ -1,7 +1,7 @@
 gnore Vim swap files
 *.swp
 *.swo
-
+**.h5
 # Ignore Vim backup files
 *~
 
