@@ -5,6 +5,8 @@ gnore Vim swap files
 # Ignore Vim backup files
 *~
 
+**.sif
+
 **.png
 **.html
 # Byte-compiled / optimized / DLL files
