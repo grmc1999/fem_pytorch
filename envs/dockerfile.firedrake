@@ -1,0 +1,30 @@
+# Use the official Firedrake image as the base
+FROM firedrakeproject/firedrake:latest
+
+# Switch to root to install system-level dependencies
+USER root
+
+# Install system packages required for PyTables (HDF5)
+# Note: Firedrake likely already includes HDF5, but this ensures the dev headers are present.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libhdf5-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Switch back to the 'firedrake' user (the default user in the base image)
+USER firedrake
+
+# Install Python packages into the existing Firedrake virtual environment
+# The PATH is already set to use the venv's pip.
+RUN pip install --no-cache-dir \
+    jupyterlab \
+    notebook \
+    pandas \
+    tables \
+    einops
+
+# Optional: Expose the default Jupyter port
+EXPOSE 8888
+
+# The base image's default command (usually a shell) is preserved.
+# To start Jupyter, you can override the command at runtime, e.g.:
+# docker run -p 8888:8888 <image> jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
