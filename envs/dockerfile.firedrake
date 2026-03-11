@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Switch back to the 'firedrake' user (the default user in the base image)
-USER firedrake
+#USER firedrake
 
 # Install Python packages into the existing Firedrake virtual environment
 # The PATH is already set to use the venv's pip.
