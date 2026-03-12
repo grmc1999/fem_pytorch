@@ -108,3 +108,4 @@ class extract_info(object):
     def set_space_values(self, u_col: str ='u'):
         u = fd.Function(self.V)
         u.dat.data[:] = self.df_f[u_col].values.astype(np.float64)
+        return u
