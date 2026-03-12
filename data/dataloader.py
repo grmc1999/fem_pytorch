@@ -87,7 +87,7 @@ class extract_info(object):
                 raise ValueError(f"Column '{col}' not found in DataFrame.")
 
         # Extract coordinates as a numpy array
-        points = self.df[position_cols].values.astype(np.float64)
+        points = self.df_f[position_cols].values.astype(np.float64)
         dim = len(position_cols)
 
         # Perform Delaunay triangulation to obtain simplices (cells)
@@ -107,4 +107,4 @@ class extract_info(object):
 
     def set_space_values(self, u_col: str ='u'):
         u = fd.Function(self.V)
-        u.dat.data[:] = self.df[u_col].values.astype(np.float64)
+        u.dat.data[:] = self.df_f[u_col].values.astype(np.float64)
