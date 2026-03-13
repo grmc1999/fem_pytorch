@@ -102,11 +102,16 @@ class two_phase_darcy_impes(object):
         
         return self.bc_p
 
+    def create_function_spaces(self):
+        self.Vp = fd.FunctionSpace(self.mesh)
+        self.Vs = fd.FunctionSpace(self.mesh)
+        self.Vflux = fd.VectorFunctionSpace(self.mesh)
     # -------------------------
     # Pressure step: div( -K lam_t(Sw) grad p ) = q_t
     # Weak form:
     #   ∫ K lam_t(Sw) ∇p·∇v dx - ∫ q_t v dx = 0
     # -------------------------
+    
     def PDE_pressure_definition(
         self,
         p: fd.Function,
@@ -284,13 +289,15 @@ class two_phase_darcy_impes(object):
 
         # Flux space
         dim = self.mesh.geometric_dimension()
-        Vflux = fd.VectorFunctionSpace(self.mesh, "DG", 0, dim=dim)
+        #Vflux = fd.VectorFunctionSpace(self.mesh, "DG", 0, dim=dim)
         u_t = fd.Function(Vflux, name="u_t")
 
         # Pressure
         Fp = self.PDE_pressure_definition(p, Sw, q_t, Vp)
-        fd.solve(Fp == 0, p, bcs=[bc_p], solver_parameters=solver_parameters_p)
-
+        if self.bc_type =="constant":
+            fd.solve(Fp == 0, p, bcs=[bc_p], solver_parameters=solver_parameters_p)
+        elif self.bc_type =="natural":
+            fd.solve(Fp == 0, p, solver_parameters=solver_parameters_p)
         # Flux
         u_t.project(-self.K * self.lam_t(Sw) * fd.grad(p))
 
