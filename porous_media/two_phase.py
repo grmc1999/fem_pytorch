@@ -182,6 +182,7 @@ class two_phase_darcy_impes(object):
         self,
         Vp: fd.functionspaceimpl.WithGeometry,
         Vs: fd.functionspaceimpl.WithGeometry,
+        Vflux: fd.functionspaceimpl.WithGeometry,
         q_t_h: List[fd.Function],
         q_w_h: List[fd.Function],
         Sw0: Optional[fd.Function] = None,
@@ -222,7 +223,7 @@ class two_phase_darcy_impes(object):
         # Total flux field for transport
         # Use DG vector space for robust facet flux evaluation
         dim = self.mesh.geometric_dimension()
-        Vflux = fd.VectorFunctionSpace(self.mesh, "DG", 0, dim=dim)
+        #Vflux = fd.VectorFunctionSpace(self.mesh, "DG", 0, dim=dim)
         u_t = fd.Function(Vflux, name="u_t")
 
         Sw_hist: List[fd.Function] = [Sw.copy(deepcopy=True)]
@@ -270,6 +271,7 @@ class two_phase_darcy_impes(object):
         q_w: fd.Function,
         Vp: fd.functionspaceimpl.WithGeometry,
         Vs: fd.functionspaceimpl.WithGeometry,
+        Vflux: fd.functionspaceimpl.WithGeometry,
         p_gauge: ScalarOrExpr = 0.0,
         p_bc_where: str = "on_boundary",
         Sw_inj: ScalarOrExpr = 1.0,
