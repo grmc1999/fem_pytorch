@@ -94,9 +94,9 @@ class two_phase_darcy_impes(object):
     # Boundary conditions
     # -------------------------
     def BC_p_definition(self, Vp: fd.functionspaceimpl.WithGeometry, g: ScalarOrExpr, where="on_boundary"):
-        if self.bc_type == "Constant":
+        if self.bc_type == "constant":
             self.bc_p = fd.DirichletBC(Vp, self._as_coeff(g), where)
-        elif self.bc_type == "Natural":
+        elif self.bc_type == "natural":
             self.bc_p = None
             self.gN = g
         
