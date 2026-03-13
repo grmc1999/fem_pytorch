@@ -33,6 +33,7 @@ class two_phase_darcy_impes(object):
         mu_o: float = 5.0,
         # time scheme: explicit Sw (keep theta=1 for pressure if you later add compressibility)
         theta: float = 1.0,
+        bc_type: str = "constant",
     ):
         self.mesh = mesh
         self.phi = fd.Constant(phi)
@@ -44,6 +45,7 @@ class two_phase_darcy_impes(object):
         self.mu_w = fd.Constant(mu_w)
         self.mu_o = fd.Constant(mu_o)
 
+        self.bc_type = bc_type
         self.bc_p: Optional[fd.DirichletBC] = None
 
     # -------------------------
@@ -114,9 +116,9 @@ class two_phase_darcy_impes(object):
     ):
         v = fd.TestFunction(Vp)
         a = fd.inner(self.K * self.lam_t(Sw) * fd.grad(p), fd.grad(v)) * fd.dx
-        if self.bc_type == "Consttant":
+        if self.bc_type == "consttant":
             L = (q_t * v) * fd.dx
-        elif self.bc_type == "Natural":
+        elif self.bc_type == "natural":
             L = (q_t * v) * fd.dx + self.gN * v * fd.ds
         return a - L
 
