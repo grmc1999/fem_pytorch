@@ -92,7 +92,12 @@ class two_phase_darcy_impes(object):
     # Boundary conditions
     # -------------------------
     def BC_p_definition(self, Vp: fd.functionspaceimpl.WithGeometry, g: ScalarOrExpr, where="on_boundary"):
-        self.bc_p = fd.DirichletBC(Vp, self._as_coeff(g), where)
+        if self.bc_type == "Constant":
+            self.bc_p = fd.DirichletBC(Vp, self._as_coeff(g), where)
+        elif self.bc_type == "Natural":
+            self.bc_p = None
+            self.gN = g
+        
         return self.bc_p
 
     # -------------------------
@@ -109,7 +114,10 @@ class two_phase_darcy_impes(object):
     ):
         v = fd.TestFunction(Vp)
         a = fd.inner(self.K * self.lam_t(Sw) * fd.grad(p), fd.grad(v)) * fd.dx
-        L = (q_t * v) * fd.dx
+        if self.bc_type == "Consttant":
+            L = (q_t * v) * fd.dx
+        elif self.bc_type == "Natural":
+            L = (q_t * v) * fd.dx + self.gN * v * fd.ds
         return a - L
 
     # -------------------------
