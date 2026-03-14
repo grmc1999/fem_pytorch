@@ -237,7 +237,12 @@ class two_phase_darcy_impes(object):
         for nstep in range(num_steps - 1):
             # ---- 1) Pressure solve at time n (using Sw^n)
             Fp = self.PDE_pressure_definition(p, Sw, q_t_h[nstep], Vp)
-            fd.solve(Fp == 0, p, bcs=[bc_p], solver_parameters=solver_parameters_p)
+    #        fd.solve(Fp == 0, p, bcs=[bc_p], solver_parameters=solver_parameters_p)
+            
+            if self.bc_type =="constant":
+                fd.solve(Fp == 0, p, bcs=[bc_p], solver_parameters=solver_parameters_p)
+            elif self.bc_type =="natural":
+                fd.solve(Fp == 0, p, solver_parameters=solver_parameters_p)
 
             # ---- 2) Total flux u_t = -K * lam_t(Sw) * grad(p)
             # Project to DG0 vector space
