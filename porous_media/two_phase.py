@@ -257,7 +257,7 @@ class two_phase_darcy_impes(object):
                 Sw_inj=Sw_inj,
                 Vs=Vs,
             )
-            fd.solve(M == rhs, Sw_new, solver_parameters={"ksp_type": "preonly", "pc_type": "jacobi"})
+            fd.solve((M - rhs) == 0, Sw_new, solver_parameters={"ksp_type": "preonly", "pc_type": "jacobi"})
 
             # Optional clamp for safety (common in explicit transport)
             Sw_new.dat.data[:] = Sw_new.dat.data.clip(0.0, 1.0)
