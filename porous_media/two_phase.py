@@ -308,7 +308,7 @@ class two_phase_darcy_impes(object):
 
         # Saturation
         M, rhs = self.PDE_saturation_definition(Sw_new, Sw, u_t, q_w, Sw_inj, Vs)
-        fd.solve(M == rhs, Sw_new, solver_parameters={"ksp_type": "preonly", "pc_type": "jacobi"})
+        fd.solve(M - rhs == 0, Sw_new, solver_parameters={"ksp_type": "preonly", "pc_type": "jacobi"})
         Sw_new.dat.data[:] = Sw_new.dat.data.clip(0.0, 1.0)
 
         return p, Sw_new
