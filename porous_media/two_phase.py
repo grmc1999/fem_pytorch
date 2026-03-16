@@ -105,6 +105,7 @@ class two_phase_darcy_impes(object):
     def create_function_spaces(self):
         self.Vp = fd.FunctionSpace(self.mesh,"CG",1)
         self.Vs = fd.FunctionSpace(self.mesh,"DG",1)
+
         self.Vflux = fd.VectorFunctionSpace(self.mesh, "DG", 0, dim=self.mesh.geometric_dimension())
     # -------------------------
     # Pressure step: div( -K lam_t(Sw) grad p ) = q_t
@@ -121,7 +122,7 @@ class two_phase_darcy_impes(object):
     ):
         v = fd.TestFunction(Vp)
         a = fd.inner(self.K * self.lam_t(Sw) * fd.grad(p), fd.grad(v)) * fd.dx
-        if self.bc_type == "consttant":
+        if self.bc_type == "constant":
             L = (q_t * v) * fd.dx
         elif self.bc_type == "natural":
             L = (q_t * v) * fd.dx + self.gN * v * fd.ds
