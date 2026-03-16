@@ -303,7 +303,8 @@ class two_phase_darcy_impes(object):
         if self.bc_type =="constant":
             fd.solve(Fp == 0, p, bcs=[bc_p], solver_parameters=solver_parameters_p)
         elif self.bc_type =="natural":
-            fd.solve(Fp == 0, p, solver_parameters=solver_parameters_p)
+            nullspace = fd.VectorSpaceBasis(constant=True)
+            fd.solve(Fp == 0, p, solver_parameters=solver_parameters_p,nullspace = nullspace)
         # Flux
         u_t.project(-self.K * self.lam_t(Sw) * fd.grad(p))
 
