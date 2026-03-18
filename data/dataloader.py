@@ -78,6 +78,14 @@ class extract_info(object):
 
         self.df_f = self.filter_trash(self.df_f)
 
+    def triangulate_indices(self):
+        self.df_f["POS"] = self.df_f[self.position_cols].apply(lambda p: np.array(p), axis = 1)
+        data = np.stack(self.df_f["POS"].values)[:,:,np.newaxis] # [Points dim extra]
+        print(data.shape)
+        functional_forms = np.stack(tuple(fd.Function(self.V).interpolate(fd.SpatialCoordinate(self.mesh)[i]).dat.data for i in range(self.dim)),axis=-1).T[np.newaxis,:,:] # [extra Points dim]
+        x = (data == functional_forms).prod(1) # [data_points functional_points]
+        data_eq,self.functional_eq = np.where(x.astype(bool))
+
     def create_functional_space(self,position_cols: List[str] = ['X', 'Y', 'Z']):
 
         # Ensure required columns exist
@@ -89,14 +97,14 @@ class extract_info(object):
 
         # Extract coordinates as a numpy array
         points = self.df_f[position_cols].values.astype(np.float64)
-        dim = len(position_cols)
+        self.dim = len(position_cols)
 
         # Perform Delaunay triangulation to obtain simplices (cells)
         self.tri = Delaunay(points)
         self.cells = self.tri.simplices
 
         plex = PETSc.DMPlex().createFromCellList(
-            dim,
+            self.dim,
             self.cells,
             points,
             comm=fd.COMM_WORLD,
@@ -109,7 +117,7 @@ class extract_info(object):
 
     def set_space_values(self, u_col: str ='u', V: fd.functionspaceimpl.WithGeometry = None):
         u = fd.Function(self.V)
-        u.dat.data[:] = self.df_f[u_col].values.astype(np.float64)
+        u.dat.data[self.functional_eq] = self.df_f[u_col].values.astype(np.float64)
         u_f = fd.Function(V)
         u_f.project(u)
         return u_f
