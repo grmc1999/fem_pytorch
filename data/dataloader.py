@@ -91,12 +91,12 @@ class extract_info(object):
         dim = len(position_cols)
 
         # Perform Delaunay triangulation to obtain simplices (cells)
-        tri = Delaunay(points)
-        cells = tri.simplices
+        self.tri = Delaunay(points)
+        self.cells = self.tri.simplices
 
         plex = PETSc.DMPlex().createFromCellList(
             dim,
-            cells,
+            self.cells,
             points,
             comm=fd.COMM_WORLD,
         )
