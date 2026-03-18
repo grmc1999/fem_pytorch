@@ -103,8 +103,8 @@ class extract_info(object):
         )
         plex.markBoundaryFaces("on_boundary")
 
-        self.mesh = fd.Mesh(plex, reorder=True)
-        
+        self.mesh = fd.Mesh(plex, reorder=False)
+
         self.V = fd.FunctionSpace(self.mesh, "CG", 1)
 
     def set_space_values(self, u_col: str ='u', V: fd.functionspaceimpl.WithGeometry = None):
