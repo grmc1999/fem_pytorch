@@ -81,6 +81,7 @@ class extract_info(object):
     def create_functional_space(self,position_cols: List[str] = ['X', 'Y', 'Z']):
 
         # Ensure required columns exist
+        self.position_cols = position_cols
         required = position_cols
         for col in required:
             if col not in self.df_f.columns:
@@ -102,7 +103,8 @@ class extract_info(object):
         )
         plex.markBoundaryFaces("on_boundary")
 
-        self.mesh = fd.Mesh(plex, reorder=False)
+        self.mesh = fd.Mesh(plex, reorder=True)
+        
         self.V = fd.FunctionSpace(self.mesh, "CG", 1)
 
     def set_space_values(self, u_col: str ='u', V: fd.functionspaceimpl.WithGeometry = None):
